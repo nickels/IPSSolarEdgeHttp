@@ -1,0 +1,8 @@
+{
+  "elements":
+  [
+    { "type": "ValidationTextBox", "name": "apiKey", "caption": "API Key" }
+  ],
+  "actions": [],
+  "status": []
+}

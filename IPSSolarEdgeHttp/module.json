@@ -1,0 +1,15 @@
+{
+  "id": "{AD404E3C-89AD-8820-5871-5AB15315C1D5}",
+  "name": "Solar Edge HTTP API",
+  "type": 3,
+  "vendor": "SolarEdge",
+  "aliases":
+  [
+    "Solar Edge HTTP API"
+  ],
+  "parentRequirements": [],
+  "childRequirements": [],
+  "implemented": [],
+  "prefix": "SOLAREDGE",
+  "url": "https://github.com/nickels/IPSSolarEdgeHttp"
+}
