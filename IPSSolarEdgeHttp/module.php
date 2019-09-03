@@ -33,7 +33,7 @@ class SolarEdgeHTTPAPI extends IPSModule {
         $this->RegisterVariableInteger('siteID', 'Site ID', null, 2);
         $this->RegisterVariableFloat('peakPower', 'Peak Power', "SOLAREDGE.kiloWattPeak", 3);
 
-        $this->RegisterTimer("Update", 5*60*1000, 'SOLAREDGE_Update($_IPS[\'TARGET\']);');
+        $this->RegisterTimer("UpdateCurrentPower", 5*60*1000, 'SOLAREDGE_updateCurrentPower($_IPS[\'TARGET\']);');
     }
 
     /**
@@ -42,25 +42,29 @@ class SolarEdgeHTTPAPI extends IPSModule {
     public function ApplyChanges() {
         parent::ApplyChanges();
 
-        if(!is_null($this->ReadPropertyString('apiKey'))){
-            $siteDetails = $this->getSiteDetails($this->ReadPropertyString('apiKey'));
-            SetValue($this->GetIDForIdent('siteID'), $siteDetails['siteID']);
-            SetValue($this->GetIDForIdent('accountId'), $siteDetails['accountId']);
-            SetValue($this->GetIDForIdent('peakPower'), $siteDetails['peakPower']);
-
-            $archive = IPS_GetInstanceIDByName("Archive", 0 );
-
-            AC_SetLoggingStatus($archive, $this->RegisterVariableInteger('currentPower', 'Current Power', "SOLAREDGE.Watt", 4), true);
-            AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastDayData', 'Yesterday', "SOLAREDGE.kiloWattHour", 5), true);
-            AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastMonthData', 'Last Month', "SOLAREDGE.kiloWattHour", 6), true);
-            AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastYearData', 'Last Year', "SOLAREDGE.megaWattHour", 7), true);
-
-            $this->RegisterVariableFloat('lifeTimeData', 'All Time', "SOLAREDGE.megaWattHour", 8);
+        if(is_null($this->ReadPropertyString('apiKey'))){
+            return;
         }
+
+        $siteDetails = $this->getSiteDetails($this->ReadPropertyString('apiKey'));
+        SetValue($this->GetIDForIdent('siteID'), $siteDetails['siteID']);
+        SetValue($this->GetIDForIdent('accountId'), $siteDetails['accountId']);
+        SetValue($this->GetIDForIdent('peakPower'), $siteDetails['peakPower']);
+
+        $archive = IPS_GetInstanceIDByName("Archive", 0 );
+
+        AC_SetLoggingStatus($archive, $this->RegisterVariableInteger('currentPower', 'Current Power', "SOLAREDGE.Watt", 4), true);
+        AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastDayData', 'Today', "SOLAREDGE.kiloWattHour", 5), true);
+        AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastMonthData', 'This Month', "SOLAREDGE.kiloWattHour", 6), true);
+        AC_SetLoggingStatus($archive, $this->RegisterVariableFloat('lastYearData', 'This Year', "SOLAREDGE.megaWattHour", 7), true);
+
+        $this->RegisterVariableFloat('lifeTimeData', 'All Time', "SOLAREDGE.megaWattHour", 8);
+        $this->RegisterVariableString('lastUpdateTime', 'Last Updated', null, 9);
+
     }
 
     /**
-     * @param $apiKey
+     * @param string $apiKey
      * @return mixed
      */
     public function getSiteDetails($apiKey) {
@@ -97,11 +101,14 @@ class SolarEdgeHTTPAPI extends IPSModule {
     }
 
     /**
-     * @param $api_Key
      * @return
      */
-    public function update() {
+    public function updateCurrentPower() {
         if(is_null($this->ReadPropertyString('apiKey'))){
+            return;
+        }
+
+        if($this->isNightTime() && $this->isSameDayWithAdded(5)){
             return;
         }
 
@@ -120,11 +127,36 @@ class SolarEdgeHTTPAPI extends IPSModule {
         }
         curl_close($ch);
 
-        SetValue($this->GetIDForIdent('currentPower'), $result['overview']['currentPower']['power']);
+        if($this->isDayTime()) {
+            SetValue($this->GetIDForIdent('currentPower'), $result['overview']['currentPower']['power']);
+        }
+
         SetValue($this->GetIDForIdent('lastDayData'), $result['overview']['lastDayData']['energy'] /1000);
         SetValue($this->GetIDForIdent('lastMonthData'), $result['overview']['lastMonthData']['energy'] / 1000);
         SetValue($this->GetIDForIdent('lastYearData'), $result['overview']['lastYearData']['energy'] / 1000000);
         SetValue($this->GetIDForIdent('lifeTimeData'), $result['overview']['lifeTimeData']['energy'] / 1000000);
+        SetValue($this->GetIDForIdent('lastUpdateTime'), $result['overview']['lastUpdateTime']);
+    }
+
+    private function isNightTime()
+    {
+        $LocationID = IPS_GetInstanceListByModuleID("{45E97A63-F870-408A-B259-2933F7EABF74}")[0];
+        return !GetValue(IPS_GetObjectIDByIdent("IsDay", $LocationID));
+    }
+
+    private function isDayTime(){
+        return ! $this->isNightTime();
+    }
+
+    private function isSameDayWithAdded($minutes)
+    {
+        $time = new DateTime('now');
+        try {
+            $time->add(new DateInterval('PT' . $minutes . 'M'));
+        } catch (Exception $e) {
+        }
+
+        return ( (new DateTime('now'))->format('d') === $time->format('d'));
     }
 }
 ?>
