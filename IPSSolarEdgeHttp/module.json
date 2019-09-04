@@ -3,10 +3,7 @@
   "name": "Solar Edge HTTP API",
   "type": 3,
   "vendor": "SolarEdge",
-  "aliases":
-  [
-    "Solar Edge HTTP API"
-  ],
+  "aliases": [],
   "parentRequirements": [],
   "childRequirements": [],
   "implemented": [],

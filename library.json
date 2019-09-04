@@ -2,7 +2,7 @@
 {
   "id": "{B37230BE-7BE8-D74C-E13D-A9C06B3F620D}",
   "author": "N. Nijman",
-  "name": "IPSSolarEdgeHttp",
+  "name": "IP-Symcon SolarEdge Http Module",
   "url": "https://github.com/nickels/IPSSolarEdgeHttp",
   "compatibility": {
     "version": "5.0",

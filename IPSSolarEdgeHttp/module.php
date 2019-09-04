@@ -108,7 +108,7 @@ class SolarEdgeHTTPAPI extends IPSModule {
             return;
         }
 
-        if($this->isNightTime() && $this->isSameDayWithAdded(5)){
+        if($this->isNightTime() && $this->isNotSameDayAsLast()){
             return;
         }
 
@@ -131,11 +131,25 @@ class SolarEdgeHTTPAPI extends IPSModule {
             SetValue($this->GetIDForIdent('currentPower'), $result['overview']['currentPower']['power']);
         }
 
-        SetValue($this->GetIDForIdent('lastDayData'), $result['overview']['lastDayData']['energy'] /1000);
-        SetValue($this->GetIDForIdent('lastMonthData'), $result['overview']['lastMonthData']['energy'] / 1000);
-        SetValue($this->GetIDForIdent('lastYearData'), $result['overview']['lastYearData']['energy'] / 1000000);
-        SetValue($this->GetIDForIdent('lifeTimeData'), $result['overview']['lifeTimeData']['energy'] / 1000000);
-        SetValue($this->GetIDForIdent('lastUpdateTime'), $result['overview']['lastUpdateTime']);
+        if(GetValue($this->GetIDForIdent('lastDayData')) !== ($result['overview']['lastDayData']['energy'] / 1000)) {
+            SetValue($this->GetIDForIdent('lastDayData'), $result['overview']['lastDayData']['energy'] / 1000);
+        }
+
+        if(GetValue($this->GetIDForIdent('lastMonthData')) !== ($result['overview']['lastMonthData']['energy'] / 1000)) {
+            SetValue($this->GetIDForIdent('lastMonthData'), $result['overview']['lastMonthData']['energy'] / 1000);
+        }
+
+        if(GetValue($this->GetIDForIdent('lastYearData')) !== ($result['overview']['lastYearData']['energy'] / 1000000)) {
+            SetValue($this->GetIDForIdent('lastYearData'), $result['overview']['lastYearData']['energy'] / 1000000);
+        }
+
+        if(GetValue($this->GetIDForIdent('lifeTimeData')) !== ($result['overview']['lifeTimeData']['energy'] / 1000000)) {
+            SetValue($this->GetIDForIdent('lifeTimeData'), $result['overview']['lifeTimeData']['energy'] / 1000000);
+        }
+
+        if(GetValue($this->GetIDForIdent('lastUpdateTime')) !== $result['overview']['lastUpdateTime']) {
+            SetValue($this->GetIDForIdent('lastUpdateTime'), $result['overview']['lastUpdateTime']);
+        }
     }
 
     private function isNightTime()
@@ -148,15 +162,9 @@ class SolarEdgeHTTPAPI extends IPSModule {
         return ! $this->isNightTime();
     }
 
-    private function isSameDayWithAdded($minutes)
+    private function isNotSameDayAsLast()
     {
-        $time = new DateTime('now');
-        try {
-            $time->add(new DateInterval('PT' . $minutes . 'M'));
-        } catch (Exception $e) {
-        }
-
-        return ( (new DateTime('now'))->format('d') === $time->format('d'));
+        return ( date_parse(GetValue($this->GetIDForIdent('lastUpdateTime')))['day'] !== (int) (new DateTime('now'))->format('d'));
     }
 }
 ?>
