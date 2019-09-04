@@ -108,7 +108,7 @@ class SolarEdgeHTTPAPI extends IPSModule {
             return;
         }
 
-        if($this->isNightTime() && $this->isNotSameDayAsLast()){
+        if($this->isNightTime() && $this->isSameDayAsLast()){
             return;
         }
 
@@ -162,9 +162,9 @@ class SolarEdgeHTTPAPI extends IPSModule {
         return ! $this->isNightTime();
     }
 
-    private function isNotSameDayAsLast()
+    private function isSameDayAsLast()
     {
-        return ( date_parse(GetValue($this->GetIDForIdent('lastUpdateTime')))['day'] !== (int) (new DateTime('now'))->format('d'));
+        return ( date_parse(GetValue($this->GetIDForIdent('lastUpdateTime')))['day'] === ((int) (new DateTime('now'))->format('d')));
     }
 }
 ?>
